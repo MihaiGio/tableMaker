@@ -9,8 +9,8 @@ import java.nio.charset.StandardCharsets;
 
 public class ConvertToExcel {
     public static void main(String[] args) throws IOException {
-        String fileName = "C:\\Users\\Mihai\\Desktop\\text.txt";
-        String excelFileName = "C:\\Users\\Mihai\\Desktop\\texting.xlsx";
+        String fileName = "C:\\Users\\mgiosan\\OneDrive - Signant Health\\Desktop\\Texts.txt";
+        String excelFileName = "C:\\Users\\mgiosan\\OneDrive - Signant Health\\Desktop\\newTexts.xlsx";
         BOMInputStream bomIn = new BOMInputStream(new FileInputStream(fileName));
 
 // Create a Workbook and a sheet in it

@@ -1,8 +1,6 @@
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellUtil;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.FileInputStream;
@@ -18,7 +16,7 @@ public class Testing {
         XSSFWorkbook wb = null;
         try {
             //wb = XSSFWorkbookFactory.create(new File("C:\\Users\\Mihai\\Desktop\\texting.xlsx"));
-            FileInputStream file = new FileInputStream("C:\\Users\\Mihai\\Desktop\\texting.xlsx");
+            FileInputStream file = new FileInputStream("C:\\Users\\mgiosan\\OneDrive - Signant Health\\Desktop\\newTexts.xlsx");
             wb = new XSSFWorkbook(file);
         } catch (IOException e) {
             e.printStackTrace();
@@ -58,7 +56,7 @@ public class Testing {
     public static void writeToWorkbook(Workbook wb) {
 
         try {
-            FileOutputStream out = new FileOutputStream("C:\\Users\\Mihai\\Desktop\\newTestFile.xlsx");
+            FileOutputStream out = new FileOutputStream("C:\\Users\\mgiosan\\OneDrive - Signant Health\\Desktop\\newTextsFile.xlsx");
             wb.write(out);
             out.close();
         } catch (Exception e) {
@@ -79,7 +77,18 @@ public class Testing {
         List<String> comment = new ArrayList<>();
         List<String> text = new ArrayList<>();
 
-        Workbook outputWb = new XSSFWorkbook();
+        XSSFWorkbook outputWb = new XSSFWorkbook();
+
+        //Styling------------------------------------------------
+        XSSFCellStyle outputStyle = outputWb.createCellStyle();
+        outputStyle.setWrapText(true);
+        outputStyle.setVerticalAlignment(VerticalAlignment.TOP);
+        //-----------------------------------------------------
+        //Why does it bold everything?
+        //XSSFCellStyle headerStyle = outputWb.createCellStyle();
+        //headerStyle.getFont().setBold(true);
+        //-------------------------------------------------------
+
         List<Sheet> outputSheets = new ArrayList<>();
 
         int rowIndex = inputWs.getLastRowNum() + 1;
@@ -88,14 +97,17 @@ public class Testing {
         for (int i = 1; i < rowIndex - 1; i++) {
             Row outerRow = inputWs.getRow(i);
             Row innerRow = null;
-            Cell outerCell = outerRow.getCell(2); // Column to filter comparison
+            Cell outerCell = CellUtil.getCell(outerRow, 2); // Column to filter comparison
             Cell innerCell = null;
 
+
             int j = 0;
-            for (j = i + 1; j < rowIndex; j++) {
+            for (j = i; j < rowIndex; j++) { //j = i + 1 -> second row moved at the bottom of the page
+                // j = i -> second row copied at the bottom of the page -> maybe delete after?
 
                 innerRow = inputWs.getRow(j);
-                innerCell = innerRow.getCell(2); // Column to filter comparison
+                // Cell innerCell = innerRow.getCell(2);
+                innerCell = CellUtil.getCell(innerRow, 2); // Column to filter comparison
 
                 if (outerCell.getStringCellValue().equals(innerCell.getStringCellValue())) {
                     languageID.add(CellUtil.getCell(innerRow, 0).getStringCellValue());
@@ -142,14 +154,45 @@ public class Testing {
             }
         }
 
+        // iterating through sheets and formatting/styling them
         for (int i = 0; i < outputWb.getNumberOfSheets(); i++) {
             Sheet sheet = outputWb.getSheetAt(i);
+            //adding header to all sheets
+            sheet.shiftRows(0, sheet.getLastRowNum(), 1);
+            Row header = sheet.createRow(0);
+            //Header cells hardcoded text------------------
+            CellUtil.getCell(header, 0).setCellValue("Language ID");
+            CellUtil.getCell(header, 1).setCellValue("Form ID");
+            CellUtil.getCell(header, 2).setCellValue("Form name");
+            CellUtil.getCell(header, 3).setCellValue("Text ID");
+            CellUtil.getCell(header, 4).setCellValue("Comment");
+            CellUtil.getCell(header, 5).setCellValue("Text");
+            //--------------------------------------------------
+//            CellUtil.getCell(header,0).setCellStyle(headerStyle);
+//            CellUtil.getCell(header,1).setCellStyle(headerStyle);
+//            CellUtil.getCell(header,2).setCellStyle(headerStyle);
+//            CellUtil.getCell(header,3).setCellStyle(headerStyle);
+//            CellUtil.getCell(header,4).setCellStyle(headerStyle);
+//            CellUtil.getCell(header,5).setCellStyle(headerStyle);
+            //-----------------------------------------------------
             sheet.autoSizeColumn(0);
             sheet.autoSizeColumn(1);
             sheet.autoSizeColumn(2);
             sheet.autoSizeColumn(3);
             sheet.setColumnWidth(4, 7000);
             sheet.setColumnWidth(5, 10000);
+
+            // iterate over rows and cells to wrap text
+            for (int j = 0; j < sheet.getLastRowNum() + 1; j++) {
+                Row row = sheet.getRow(j);
+                CellUtil.getCell(row, 0).setCellStyle(outputStyle);
+                CellUtil.getCell(row, 1).setCellStyle(outputStyle);
+                CellUtil.getCell(row, 2).setCellStyle(outputStyle);
+                CellUtil.getCell(row, 3).setCellStyle(outputStyle);
+                CellUtil.getCell(row, 4).setCellStyle(outputStyle);
+                CellUtil.getCell(row, 5).setCellStyle(outputStyle);
+            }
+
         }
         writeToWorkbook(outputWb);
     }
