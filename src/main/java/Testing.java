@@ -102,7 +102,7 @@ public class Testing {
 
 
             int j = 0;
-            for (j = i; j < rowIndex; j++) { //j = i + 1 -> second row moved at the bottom of the page
+            for (j = i + 1; j < rowIndex; j++) { //j = i + 1 -> second row moved at the bottom of the page
                 // j = i -> second row copied at the bottom of the page -> maybe delete after?
 
                 innerRow = inputWs.getRow(j);
