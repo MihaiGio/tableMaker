@@ -1,71 +1,65 @@
+package mgiosan.tablemaker;
+
+import org.apache.commons.io.input.BOMInputStream;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellUtil;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import javax.swing.*;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Testing {
+public class MainProgram {
 
-    public static XSSFWorkbook readWorkbook() {
+    public static void main(String[] args) throws IOException {
+        String fileName = "./texts.txt";
+        String excelFileName = "./ConvertedTextsToExcel.xlsx";
+        BOMInputStream bomIn = new BOMInputStream(new FileInputStream(fileName));
 
-        XSSFWorkbook wb = null;
-        try {
-            //wb = XSSFWorkbookFactory.create(new File("C:\\Users\\Mihai\\Desktop\\texting.xlsx"));
-            FileInputStream file = new FileInputStream("C:\\Users\\mgiosan\\OneDrive - Signant Health\\Desktop\\newTexts.xlsx");
-            wb = new XSSFWorkbook(file);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return wb;
-    }
+// Create a Workbook and a sheet in it
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        XSSFSheet sheet = workbook.createSheet("Sheet1");
+        XSSFCellStyle style = workbook.createCellStyle();
+        style.setWrapText(true);
+        style.setVerticalAlignment(VerticalAlignment.TOP);
 
-    public static void writeToSheet(List<String> languageID, List<String> formID, List<String> formName, List<String> textID,
-                                    List<String> comment, List<String> text, int sheetCounter, List<Sheet> outputSheets) {
-
-
-        for (int i = 0; i < languageID.size(); i++) {
-
-            Row row = outputSheets.get(sheetCounter).createRow(i);
-
-            Cell languageIDCell = row.createCell(0);
-            languageIDCell.setCellValue(languageID.get(i));
-
-            Cell formIDCell = row.createCell(1);
-            formIDCell.setCellValue(formID.get(i));
-
-            Cell formNameCell = row.createCell(2);
-            formNameCell.setCellValue(formName.get(i));
-
-            Cell textIDCell = row.createCell(3);
-            textIDCell.setCellValue(textID.get(i));
-
-            Cell commentCell = row.createCell(4);
-            commentCell.setCellValue(comment.get(i));
-
-            Cell textCell = row.createCell(5);
-            textCell.setCellValue(text.get(i));
-
-        }
-    }
-
-    public static void writeToWorkbook(Workbook wb) {
-
-        try {
-            FileOutputStream out = new FileOutputStream("C:\\Users\\mgiosan\\OneDrive - Signant Health\\Desktop\\newTextsFile.xlsx");
-            wb.write(out);
-            out.close();
+// Read your input file and make cells into the workbook
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(bomIn, StandardCharsets.UTF_16))) {
+            String line;
+            Row row;
+            Cell cell;
+            int rowIndex = 0;
+            while ((line = br.readLine()) != null) {
+                row = sheet.createRow(rowIndex);
+                String[] tokens = line.split("[\\t]"); // delimit by TAB regex
+                for (int iToken = 0; iToken < tokens.length; iToken++) {
+                    cell = row.createCell(iToken);
+                    cell.setCellValue(tokens[iToken]);
+                    cell.setCellStyle(style);
+                }
+                rowIndex++;
+            }
+            sheet.autoSizeColumn(0);
+            sheet.autoSizeColumn(1);
+            sheet.autoSizeColumn(2);
+            sheet.autoSizeColumn(3);
+            sheet.setColumnWidth(4, 7000);
+            sheet.setColumnWidth(5, 10000);
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
 
-    public static void main(String[] args) {
+
+// Write your xlsx file
+        try (FileOutputStream outputStream = new FileOutputStream(excelFileName)) {
+            workbook.write(outputStream);
+            workbook.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         XSSFWorkbook inputWb = readWorkbook();
         Sheet inputWs = inputWb.getSheet("Sheet1");
@@ -84,11 +78,7 @@ public class Testing {
         XSSFCellStyle outputStyle = outputWb.createCellStyle();
         outputStyle.setWrapText(true);
         outputStyle.setVerticalAlignment(VerticalAlignment.TOP);
-        //-----------------------------------------------------
-        //Why does it bold everything?
-        //XSSFCellStyle headerStyle = outputWb.createCellStyle();
-        //headerStyle.getFont().setBold(true);
-        //-------------------------------------------------------
+
 
         List<Sheet> outputSheets = new ArrayList<>();
 
@@ -97,12 +87,12 @@ public class Testing {
 
         for (int i = 1; i < rowIndex - 1; i++) {
             Row outerRow = inputWs.getRow(i);
-            Row innerRow = null;
+            Row innerRow;
             Cell outerCell = CellUtil.getCell(outerRow, 2); // Column to filter comparison
-            Cell innerCell = null;
+            Cell innerCell;
 
 
-            int j = 0;
+            int j;
             for (j = i + 1; j < rowIndex; j++) { //j = i + 1 -> second row moved at the bottom of the page
                 // j = i -> second row copied at the bottom of the page -> maybe delete after?
 
@@ -150,14 +140,13 @@ public class Testing {
                 textID.add(tempRow.getCell(3).getStringCellValue());
                 comment.add(tempRow.getCell(4).getStringCellValue());
                 text.add(tempRow.getCell(5).getStringCellValue());
-            } catch (Exception e) {
-                continue;
+            } catch (Exception ignored) {
             }
         }
 
         // iterating through sheets and formatting/styling them
         for (int i = 0; i < outputWb.getNumberOfSheets(); i++) {
-            Sheet sheet = outputWb.getSheetAt(i);
+            sheet = outputWb.getSheetAt(i);
             //adding header to all sheets
             sheet.shiftRows(0, sheet.getLastRowNum(), 1);
             Row header = sheet.createRow(0);
@@ -168,14 +157,7 @@ public class Testing {
             CellUtil.getCell(header, 3).setCellValue("Text ID");
             CellUtil.getCell(header, 4).setCellValue("Comment");
             CellUtil.getCell(header, 5).setCellValue("Text");
-            //--------------------------------------------------
-//            CellUtil.getCell(header,0).setCellStyle(headerStyle);
-//            CellUtil.getCell(header,1).setCellStyle(headerStyle);
-//            CellUtil.getCell(header,2).setCellStyle(headerStyle);
-//            CellUtil.getCell(header,3).setCellStyle(headerStyle);
-//            CellUtil.getCell(header,4).setCellStyle(headerStyle);
-//            CellUtil.getCell(header,5).setCellStyle(headerStyle);
-            //-----------------------------------------------------
+
             sheet.autoSizeColumn(0);
             sheet.autoSizeColumn(1);
             sheet.autoSizeColumn(2);
@@ -196,5 +178,57 @@ public class Testing {
 
         }
         writeToWorkbook(outputWb);
+    }
+
+    public static XSSFWorkbook readWorkbook() {
+
+        XSSFWorkbook wb = null;
+        try {
+            FileInputStream file = new FileInputStream("./ConvertedTextsToExcel.xlsx");
+            wb = new XSSFWorkbook(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return wb;
+    }
+
+    public static void writeToSheet(List<String> languageID, List<String> formID, List<String> formName, List<String> textID,
+                                    List<String> comment, List<String> text, int sheetCounter, List<Sheet> outputSheets) {
+
+
+        for (int i = 0; i < languageID.size(); i++) {
+
+            Row row = outputSheets.get(sheetCounter).createRow(i);
+
+            Cell languageIDCell = row.createCell(0);
+            languageIDCell.setCellValue(languageID.get(i));
+
+            Cell formIDCell = row.createCell(1);
+            formIDCell.setCellValue(formID.get(i));
+
+            Cell formNameCell = row.createCell(2);
+            formNameCell.setCellValue(formName.get(i));
+
+            Cell textIDCell = row.createCell(3);
+            textIDCell.setCellValue(textID.get(i));
+
+            Cell commentCell = row.createCell(4);
+            commentCell.setCellValue(comment.get(i));
+
+            Cell textCell = row.createCell(5);
+            textCell.setCellValue(text.get(i));
+
+        }
+    }
+
+    public static void writeToWorkbook(Workbook wb) {
+
+        try {
+            FileOutputStream out = new FileOutputStream("./FinalExcelFile.xlsx");
+            wb.write(out);
+            out.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
